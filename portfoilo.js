@@ -101,4 +101,71 @@
     trL.rotation.z=Math.PI/2;
     vert.add(trL);
     const trR=trL.clone();
-    trR.position
+    trR.position.set(0.5*sizeFactor,0,-0.15);
+    vert.add(trR);
+
+    // articular processes — small spheres at corners for facet joints
+    const artGeom=new THREE.SphereGeometry(0.12*sizeFactor,8,8);
+    [-0.35,-0.35].forEach((x,i)=>{
+      const art=new THREE.Mesh(artGeom,processMat);
+      art.position.set(x*(i?-1:1),0.2,-0.25*sizeFactor);
+      vert.add(art);
+    });
+
+    vert.position.x=curveX(y);
+    vert.position.y=y;
+    vert.position.z=curveZ(y);
+    spineGroup.add(vert);
+
+    // intervertebral discs — between vertebrae
+    if(i<VERTEBRAE-1){
+      const y2=topY-(i+1)*step;
+      const discY=(y+y2)*.5;
+      const discGeom=new THREE.CylinderGeometry(0.58*sizeFactor,0.58*sizeFactor,0.15,20,2);
+      const disc=new THREE.Mesh(discGeom,discMat);
+      disc.position.x=curveX(discY);
+      disc.position.y=discY;
+      disc.position.z=curveZ(discY);
+      spineGroup.add(disc);
+    }
+  }
+
+  // Sacrum — triangular fused bone at base
+  const sac=new THREE.Group();
+  const sacGeom=new THREE.OctahedronGeometry(0.7,2);
+  const sacMesh=new THREE.Mesh(sacGeom,boneMat);
+  sacMesh.scale.set(1.2,0.8,1);
+  sac.add(sacMesh);
+  sac.position.set(curveX(-6.5),-6.5,curveZ(-6.5));
+  spineGroup.add(sac);
+
+  // initial animation state
+  let animTarget={rx:0,ry:0};
+  let animCur={rx:0,ry:0};
+
+  window.addEventListener('mousemove',(e)=>{
+    animTarget.ry=(e.clientX/innerWidth-0.5)*Math.PI*.3;
+    animTarget.rx=(e.clientY/innerHeight-0.5)*Math.PI*.15;
+  });
+
+  function animate(){
+    requestAnimationFrame(animate);
+    
+    // smooth damping
+    animCur.rx+=(animTarget.rx-animCur.rx)*.08;
+    animCur.ry+=(animTarget.ry-animCur.ry)*.08;
+    
+    spineGroup.rotation.x=animCur.rx;
+    spineGroup.rotation.y=animCur.ry;
+    
+    renderer.render(scene,camera);
+  }
+  animate();
+
+  // handle window resize
+  window.addEventListener('resize',()=>{
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+  });
+})();
